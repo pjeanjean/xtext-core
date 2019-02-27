@@ -16,6 +16,7 @@ import java.util.Set;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -69,7 +70,7 @@ public class ChangeSerializer implements IChangeSerializer {
 
 	@Override
 	public void applyModifications(IAcceptor<IEmfResourceChange> changeAcceptor) {
-		monitor.setTaskName("Preparing Text Changes...");
+		SubMonitor progress = SubMonitor.convert(monitor, "Preparing Text Changes...", modifications.size()*2);
 		Set<Resource> resources = Sets.newLinkedHashSet();
 		for (Pair<Notifier, IModification<? extends Notifier>> p : modifications) {
 			Notifier context = p.getFirst();
@@ -80,6 +81,7 @@ public class ChangeSerializer implements IChangeSerializer {
 			else if (context instanceof ResourceSet) {
 				throw new IllegalStateException("Not supported");
 			}
+			progress.worked(1);
 		}
 		for (Resource res : resources) {
 			// TODO: use the exact context
@@ -88,6 +90,7 @@ public class ChangeSerializer implements IChangeSerializer {
 		checkCanceled();
 		for (Pair<Notifier, IModification<? extends Notifier>> entry : modifications) {
 			apply(entry.getFirst(), entry.getSecond());
+			progress.worked(1);
 		}
 		checkCanceled();
 		endRecordChanges(changeAcceptor);
@@ -159,10 +162,10 @@ public class ChangeSerializer implements IChangeSerializer {
 				updaters.add(updater);
 			}
 		}
-		monitor.beginTask("Creating Text Changes...", updaters.size());
+		SubMonitor progress = SubMonitor.convert(monitor, "Creating Text Changes...", updaters.size());
 		for (ResourceUpdater updater : updaters) {
 			updater.applyChange(deltas, changeAcceptor);
-			monitor.worked(1);
+			progress.worked(1);
 			checkCanceled();
 		}
 		for (ResourceUpdater updater : updaters) {
