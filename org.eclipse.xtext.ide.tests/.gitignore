@@ -1,3 +1,4 @@
 test-data/
 test-data2/
 .antlr-generator-*.jar
+/target/
