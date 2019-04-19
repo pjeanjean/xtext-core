@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -22,7 +23,10 @@ import org.eclipse.xtext.AbstractElement;
 import org.eclipse.xtext.Action;
 import org.eclipse.xtext.IGrammarAccess;
 import org.eclipse.xtext.Keyword;
+import org.eclipse.xtext.ParserRule;
 import org.eclipse.xtext.RuleCall;
+import org.eclipse.xtext.impl.RuleCallImpl;
+import org.eclipse.xtext.impl.RuleCallWithAppendedTokenImpl;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
@@ -447,8 +451,18 @@ public class BacktrackingSemanticSequencer extends AbstractSemanticSequencer {
 			else if (ele instanceof Keyword)
 				feeder.accept((Keyword) ele, ti.getValue(), ti.getIndex(), ti.getLeafNode());
 		} else {
-			if (ele instanceof RuleCall)
+			if (ele instanceof RuleCall) {
+				if (ti.getObj().getEObject() instanceof ParserRule) {
+					ParserRule pr = (ParserRule) ti.getObj().getEObject();
+					if (pr.getType().getMetamodel() != null && (pr.getType().getMetamodel().getAlias() != null
+							|| !pr.getType().getClassifier().getName().equals(pr.getName()))
+							&& !(pr.getType().getClassifier() instanceof EDataType)) {
+						if (ele instanceof RuleCallImpl)
+							ele = new RuleCallWithAppendedTokenImpl((RuleCallImpl) ele, "returns");
+					}
+				}
 				feeder.accept((RuleCall) ele, ti.getValue(), ti.getNode());
+			}
 			else if (ele instanceof Action)
 				feeder.accept((Action) ele, (EObject) ti.getValue(), ti.getCompositeNode());
 			else if (ele instanceof Keyword)

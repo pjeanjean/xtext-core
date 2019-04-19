@@ -17,6 +17,7 @@ import org.eclipse.xtext.GrammarUtil;
 import org.eclipse.xtext.Keyword;
 import org.eclipse.xtext.ParserRule;
 import org.eclipse.xtext.RuleCall;
+import org.eclipse.xtext.RuleCallWithAppendedToken;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.parsetree.reconstr.ITokenStream;
@@ -187,20 +188,8 @@ public class TokenStreamSequenceAdapter implements ISequenceAcceptor {
 	}
 
 	protected void writeSemantic(EObject grammarElement, String value) {
-		if (grammarElement instanceof RuleCall) {
-			RuleCall ruleCall = (RuleCall) grammarElement;
-			if (ruleCall.getRule() instanceof ParserRule) {
-				ParserRule parserRule = (ParserRule) ruleCall.getRule();
-				if (parserRule.getType() != null && parserRule.getName().equals("ValidID")
-						&& ruleCall.eContainer() != null
-						&& ruleCall.eContainer().eContainer() != null
-						&& ruleCall.eContainer().eContainer().eContainer() != null
-						&& ruleCall.eContainer().eContainer().eContainer() instanceof ParserRule) {
-					if (((ParserRule) ruleCall.eContainer().eContainer().eContainer()).getName().equals("RuleNameAndParams")) {
-						value += " returns";
-					}
-				}
-			}
+		if (grammarElement instanceof RuleCallWithAppendedToken) {
+			value += " " + ((RuleCallWithAppendedToken) grammarElement).getToken();
 		}
 		try {
 			//			System.out.println("S:" + value);
